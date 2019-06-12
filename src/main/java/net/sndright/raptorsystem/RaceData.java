@@ -3,12 +3,13 @@ package net.sndright.raptorsystem;
 
 import lombok.Data;
 
+import java.sql.Date;
 import java.util.List;
 
 @Data
 public class RaceData {
 
-    public String date;
+    public Date date;
 
     public String place;
 
@@ -17,6 +18,8 @@ public class RaceData {
     public String raceName;
 
     public String dist;
+
+    public String condition;
 
     public String raceUrl;
 

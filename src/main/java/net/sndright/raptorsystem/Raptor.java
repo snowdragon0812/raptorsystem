@@ -5,18 +5,42 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.sql.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ResourceBundle;
+import java.util.Scanner;
 
 public class Raptor {
 
-    public final static String URL = "https://db.netkeiba.com/race/list/20190602/";
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException, ParseException {
+        Scanner stdIn = new Scanner(System.in);
+        String dateText = "";
+        while(true){
+            System.out.print("日付を入れる（8桁※yyyy-MM-dd形式で）＞＞");
+            dateText = stdIn.next();
+            if(dateText.length() != 10){
+                System.out.println("不正な日付");
+            }else{
+                break;
+            }
+        }
+        String urlDate = dateText.replace("-","");
+
+        String URL = "https://db.netkeiba.com/race/list/"+urlDate+"/";
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        Date formatDate = Date.valueOf(dateText);
+
         List<RaceData> raceDataList = new ArrayList<RaceData>();
-        Document document = Jsoup.connect(URL).get();
-        Elements elements = document.select("dl.race_top_hold_list");
+        Elements elements = Jsoup.connect(URL).get().select("dl.race_top_hold_list");
         for(Element element : elements){
             Thread.sleep(1000);
             Document document1 = Jsoup.parse(String.valueOf(element));
@@ -42,40 +66,55 @@ public class Raptor {
                 String eleText = element11.text();
                 String[] data = eleText.split(" ");
                 RaceData raceData = new RaceData();
-                raceData.setDate("20190602");
+                raceData.setDate(formatDate);
                 raceData.setPlace(place);
                 raceData.setRaceNumber(data[0]);
                 raceData.setRaceName(data[1]);
                 raceData.setDist(data[2]);
                 raceData.setRaceUrl(raceUrlList.get(index2));
+                raceData.setCondition(getConditionInfo(raceData.getRaceUrl()));
 
                 BulletinBoardInfo bulletinBoardInfo = getBulletBoardInfo(raceData.getRaceUrl());
                 raceData.setBulletinBoardInfo(bulletinBoardInfo);
 
                 raceDataList.add(raceData);
                 index2++;
-                System.out.println(raceData);
+                System.out.println(index2);
+
 
             }
 
 
 
-
-
         }
+        insertRaceData(raceDataList);
 
-        for(RaceData raceData : raceDataList){
-            //System.out.println(raceData);
-        }
 
 
     }
 
+    public static String getConditionInfo(String url) throws IOException {
+        Document document = Jsoup.connect(url).get();
+        String text = document.select("dl.racedata").text();
+        //System.out.println(text);
+        String[] textArray = text.split("/");
+        //System.out.println(textArray[2]);
+        String[] textArray2 = textArray[2].split(":");
+        //System.out.println(textArray2[1]);
+        String conditionText = textArray2[1].replace(" ","");
+        //System.out.println(conditionText);
+
+
+        return conditionText;
+    }
+
     public static BulletinBoardInfo getBulletBoardInfo(String raceUrl) throws IOException, InterruptedException {
         BulletinBoardInfo bulletinBoardInfo = new BulletinBoardInfo();
-        //System.out.println(raceUrl);
-        Document document = Jsoup.connect(raceUrl).get();
-        Elements elements = document.select("table.race_table_01 td.txt_l a");
+        //Document document = Jsoup.connect(raceUrl).get();
+        //Elements elements = document.select("table.race_table_01 td.txt_l a");
+
+        Elements elements = Jsoup.connect(raceUrl).get().select("table.race_table_01 td.txt_l a");
+
         int index = 0;
         for(Element element : elements){
             if(index == 0){
@@ -83,8 +122,9 @@ public class Raptor {
                 bulletinBoardInfo.setHorseNameUrl_1("https://db.netkeiba.com"+element.attr("href"));
                 //ここで親の血糖取得する
                 Thread.sleep(1000);
-                Document document1 = Jsoup.connect(bulletinBoardInfo.getHorseNameUrl_1()).get();
-                Elements elements1 = document1.select("table.blood_table a");
+                //Document document1 = Jsoup.connect(bulletinBoardInfo.getHorseNameUrl_1()).get();
+                //Elements elements1 = document1.select("table.blood_table a");
+                Elements elements1 = Jsoup.connect(bulletinBoardInfo.getHorseNameUrl_1()).get().select("table.blood_table a");
                 int index1 = 0;
                 for(Element element1 : elements1){
                     if(index1 == 0){
@@ -103,8 +143,9 @@ public class Raptor {
                 bulletinBoardInfo.setHorseNameUrl_2("https://db.netkeiba.com"+element.attr("href"));
                 //ここで親の血糖取得する
                 Thread.sleep(1000);
-                Document document1 = Jsoup.connect(bulletinBoardInfo.getHorseNameUrl_2()).get();
-                Elements elements1 = document1.select("table.blood_table a");
+                //Document document1 = Jsoup.connect(bulletinBoardInfo.getHorseNameUrl_2()).get();
+                //Elements elements1 = document1.select("table.blood_table a");
+                Elements elements1 =  Jsoup.connect(bulletinBoardInfo.getHorseNameUrl_2()).get().select("table.blood_table a");
                 int index1 = 0;
                 for(Element element1 : elements1){
                     if(index1 == 0){
@@ -123,8 +164,9 @@ public class Raptor {
                 bulletinBoardInfo.setHorseNameUrl_3("https://db.netkeiba.com"+element.attr("href"));
                 //ここで親の血糖取得する
                 Thread.sleep(1000);
-                Document document1 = Jsoup.connect(bulletinBoardInfo.getHorseNameUrl_3()).get();
-                Elements elements1 = document1.select("table.blood_table a");
+//                Document document1 = Jsoup.connect(bulletinBoardInfo.getHorseNameUrl_3()).get();
+//                Elements elements1 = document1.select("table.blood_table a");
+                Elements elements1 = Jsoup.connect(bulletinBoardInfo.getHorseNameUrl_3()).get().select("table.blood_table a");
                 int index1 = 0;
                 for(Element element1 : elements1){
                     if(index1 == 0){
@@ -147,6 +189,87 @@ public class Raptor {
 
         return bulletinBoardInfo;
 
+    }
+
+    public static void insertRaceData(List<RaceData> raceDataList) throws ClassNotFoundException {
+        //System.out.println(SqlConst.SQL);
+
+        ResourceBundle rb = ResourceBundle.getBundle("setting");
+        String USER = rb.getString("user");
+        String PASS = rb.getString("pass");
+
+        Connection con = null;
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
+            con = DriverManager.getConnection("jdbc:mysql://localhost/raptor?user="+USER+"&password="+PASS+"&characterEncoding=UTF-8&serverTimezone=JST");
+            con.setAutoCommit(false);
+            System.out.println("MySQLに接続できました。");
+            int index = 1;
+            for(RaceData raceData : raceDataList){
+                try(PreparedStatement ps = con.prepareStatement(SqlConst.SQL)){
+                    ps.setDate(1,raceData.getDate());
+                    ps.setString(2,raceData.getPlace());
+                    ps.setString(3,raceData.getRaceNumber());
+                    ps.setString(4,raceData.getRaceName());
+                    ps.setString(5,raceData.getDist());
+                    ps.setString(6,raceData.getCondition());
+                    ps.setString(7,raceData.getRaceUrl());
+                    ps.setString(8,raceData.getBulletinBoardInfo().getHorseName_1());
+                    ps.setString(9,raceData.getBulletinBoardInfo().getHorseNameUrl_1());
+                    ps.setString(10,raceData.getBulletinBoardInfo().getFather1_1());
+                    ps.setString(11,raceData.getBulletinBoardInfo().getFather11_1());
+                    ps.setString(12,raceData.getBulletinBoardInfo().getFather12_1());
+                    ps.setString(13,raceData.getBulletinBoardInfo().getJockey_1());
+
+                    ps.setString(14,raceData.getBulletinBoardInfo().getHorseName_2());
+                    ps.setString(15,raceData.getBulletinBoardInfo().getHorseNameUrl_2());
+                    ps.setString(16,raceData.getBulletinBoardInfo().getFather1_2());
+                    ps.setString(17,raceData.getBulletinBoardInfo().getFather11_2());
+                    ps.setString(18,raceData.getBulletinBoardInfo().getFather12_2());
+                    ps.setString(19,raceData.getBulletinBoardInfo().getJockey_2());
+
+                    ps.setString(20,raceData.getBulletinBoardInfo().getHorseName_3());
+                    ps.setString(21,raceData.getBulletinBoardInfo().getHorseNameUrl_3());
+                    ps.setString(22,raceData.getBulletinBoardInfo().getFather1_3());
+                    ps.setString(23,raceData.getBulletinBoardInfo().getFather11_3());
+                    ps.setString(24,raceData.getBulletinBoardInfo().getFather12_3());
+                    ps.setString(25,raceData.getBulletinBoardInfo().getJockey_3());
+
+                    ps.executeUpdate();
+
+                    System.out.println(index+"OK");
+                    index++;
+                } catch (Exception e){
+                    e.printStackTrace();
+                    con.rollback();
+                    System.out.println("rollback");
+                    throw e;
+                }
+
+            }
+            con.commit();
+            con.setAutoCommit(true);
+
+
+
+
+
+        } catch (SQLException | InstantiationException | IllegalAccessException e) {
+            e.printStackTrace();
+            System.out.println("MySQLに接続できませんでした。");
+        } catch (Exception e){
+            e.printStackTrace();
+
+        } finally {
+            if (con != null) {
+                try {
+                    con.close();
+                } catch (SQLException e) {
+                    System.out.println("MySQLのクローズに失敗しました。");
+                }
+            }
+
+        }
     }
 
 }
