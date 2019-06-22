@@ -23,26 +23,112 @@ public class Raptor {
     public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException, ParseException {
         Scanner stdIn = new Scanner(System.in);
         String dateText = "";
-        while(true){
+        String[] dateTextArray;
+//        while(true){
+//            System.out.print("日付を入れる（8桁※yyyy-MM-dd形式で）＞＞");
+//            dateText = stdIn.next();
+//            if(dateText.length() != 10){
+//                System.out.println("不正な日付");
+//            }else{
+//                break;
+//            }
+//        }
+        while(true) {
             System.out.print("日付を入れる（8桁※yyyy-MM-dd形式で）＞＞");
             dateText = stdIn.next();
-            if(dateText.length() != 10){
-                System.out.println("不正な日付");
-            }else{
+            dateTextArray = dateText.split(",");
+            //入力したテキストが問題ないか確認
+            boolean flg = true;
+            for (int i = 0; i < dateTextArray.length; i++) {
+                if (dateTextArray[i].length() != 10){
+                    System.out.println("不正な日付");
+                    flg = false;
+                }
+            }
+            if(flg){
                 break;
             }
         }
-        String urlDate = dateText.replace("-","");
+
+        for(int i = 0;i<dateTextArray.length;i++){
+            getData(dateTextArray[i]);
+        }
+
+
+//        String urlDate = dateText.replace("-","");
+//
+//        String URL = "https://db.netkeiba.com/race/list/"+urlDate+"/";
+//
+//        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+//        Date formatDate = Date.valueOf(dateText);
+//
+//        List<RaceData> raceDataList = new ArrayList<RaceData>();
+//        Elements elements = Jsoup.connect(URL).get().select("dl.race_top_hold_list");
+//        for(Element element : elements){
+//            Thread.sleep(500);
+//            Document document1 = Jsoup.parse(String.valueOf(element));
+//            //System.out.println(document1.html());
+//            Elements elements1 = document1.select("dt p");
+//            String place = elements1.text();
+//            //raceのURL取得
+//            Elements elements2 = document1.select("dl.race_top_data_info a");
+//            List<String> raceUrlList = new ArrayList<String>();
+//            int index1 = 0;
+//            for(Element element1 : elements2){
+//                if(index1 % 2 == 0){
+//                    String raceUrl = "https://db.netkeiba.com"+element1.attr("href");
+//                    raceUrlList.add(raceUrl);
+//                }
+//                index1++;
+//            }
+//            //System.out.println(raceUrlList);
+//            //System.out.println("-----------------");
+//            Elements elements11 = document1.select("dl.race_top_data_info");
+//            int index2 = 0;
+//            for(Element element11 : elements11){
+//                String eleText = element11.text();
+//                String[] data = eleText.split(" ");
+//                RaceData raceData = new RaceData();
+//                raceData.setDate(formatDate);
+//                raceData.setPlace(place);
+//                raceData.setRaceNumber(data[0]);
+//                raceData.setRaceName(data[1]);
+//                raceData.setDist(data[2]);
+//                raceData.setRaceUrl(raceUrlList.get(index2));
+//                raceData.setCondition(getConditionInfo(raceData.getRaceUrl()));
+//
+//                BulletinBoardInfo bulletinBoardInfo = getBulletBoardInfo(raceData.getRaceUrl());
+//                raceData.setBulletinBoardInfo(bulletinBoardInfo);
+//
+//                raceDataList.add(raceData);
+//                index2++;
+//                System.out.println(index2);
+//
+//
+//            }
+//
+//
+//
+//        }
+//        insertRaceData(raceDataList);
+//
+//
+
+    }
+
+    public static void getData(String targetDate) throws ClassNotFoundException, IOException, InterruptedException {
+
+        String urlDate = targetDate.replace("-","");
 
         String URL = "https://db.netkeiba.com/race/list/"+urlDate+"/";
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-        Date formatDate = Date.valueOf(dateText);
+        Date formatDate = Date.valueOf(targetDate);
 
         List<RaceData> raceDataList = new ArrayList<RaceData>();
         Elements elements = Jsoup.connect(URL).get().select("dl.race_top_hold_list");
         for(Element element : elements){
-            Thread.sleep(1000);
+            Thread.sleep(500);
             Document document1 = Jsoup.parse(String.valueOf(element));
             //System.out.println(document1.html());
             Elements elements1 = document1.select("dt p");
@@ -88,10 +174,8 @@ public class Raptor {
 
         }
         insertRaceData(raceDataList);
-
-
-
     }
+
 
     public static String getConditionInfo(String url) throws IOException {
         Document document = Jsoup.connect(url).get();
@@ -121,7 +205,7 @@ public class Raptor {
                 bulletinBoardInfo.setHorseName_1(element.text());
                 bulletinBoardInfo.setHorseNameUrl_1("https://db.netkeiba.com"+element.attr("href"));
                 //ここで親の血糖取得する
-                Thread.sleep(1000);
+                Thread.sleep(500);
                 //Document document1 = Jsoup.connect(bulletinBoardInfo.getHorseNameUrl_1()).get();
                 //Elements elements1 = document1.select("table.blood_table a");
                 Elements elements1 = Jsoup.connect(bulletinBoardInfo.getHorseNameUrl_1()).get().select("table.blood_table a");
@@ -142,7 +226,7 @@ public class Raptor {
                 bulletinBoardInfo.setHorseName_2(element.text());
                 bulletinBoardInfo.setHorseNameUrl_2("https://db.netkeiba.com"+element.attr("href"));
                 //ここで親の血糖取得する
-                Thread.sleep(1000);
+                Thread.sleep(500);
                 //Document document1 = Jsoup.connect(bulletinBoardInfo.getHorseNameUrl_2()).get();
                 //Elements elements1 = document1.select("table.blood_table a");
                 Elements elements1 =  Jsoup.connect(bulletinBoardInfo.getHorseNameUrl_2()).get().select("table.blood_table a");
@@ -163,7 +247,7 @@ public class Raptor {
                 bulletinBoardInfo.setHorseName_3(element.text());
                 bulletinBoardInfo.setHorseNameUrl_3("https://db.netkeiba.com"+element.attr("href"));
                 //ここで親の血糖取得する
-                Thread.sleep(1000);
+                Thread.sleep(500);
 //                Document document1 = Jsoup.connect(bulletinBoardInfo.getHorseNameUrl_3()).get();
 //                Elements elements1 = document1.select("table.blood_table a");
                 Elements elements1 = Jsoup.connect(bulletinBoardInfo.getHorseNameUrl_3()).get().select("table.blood_table a");
